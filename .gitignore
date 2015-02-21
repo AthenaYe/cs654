@@ -1,3 +1,7 @@
+# self define
+stringClient
+stringServer
+
 # Object files
 *.o
 *.ko
