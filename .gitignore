@@ -2,6 +2,8 @@
 stringClient
 stringServer
 test*
+client
+server
 
 # Object files
 *.o
