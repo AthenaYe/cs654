@@ -23,42 +23,89 @@ struct sockaddr_in serv_addr, cli_addr;
 
 void *rw_socket(void *sock_ptr)
 {
-	long newsock = (long)sock_ptr;
-	int newsockfd = (int)newsock;
-     char buffer[256];
-	 int n;
-	 while(true)
-	 {
-		 bzero(buffer,256);
-		 n = read(newsockfd,buffer,255);
-		 if(n <2)
-			 break;
-		 if (n < 0) puts("ERROR reading from socket");
-		 printf("Here is the message: %s\n",buffer);
-		 n = write(newsockfd,buffer,sizeof(buffer));
-		 if (n < 0) puts("ERROR writing to socket");
-	 }
-	 close(newsockfd);
-	 pthread_exit(NULL);
+	int newsockfd = (int)((long)sock_ptr);
+	char buffer[256];
+	char reply_msg[256];
+	char padding[1];
+	int n;
+	uint8_t content_len;
+	while(true)
+	{
+		bzero(buffer, sizeof(buffer));
+		bzero(reply_msg, sizeof(buffer));
+		// recv reply msg length
+		n = recv(newsockfd, buffer, 1, 0);
+		if (n < 0) {
+			perror("ERROR reading from socket");
+			break;
+		}
+		if (n == 0) {
+			printf("Client Disconnected\n");
+			break;
+		}
+		ssize_t msg_len = (ssize_t)buffer[0];
+		// recv reply msg
+		if (recv(newsockfd, buffer, msg_len, MSG_WAITALL) < 0) {
+			perror("ERROR reading from socket");
+			break;
+		}
+		// recv ending zero
+		if (recv(newsockfd, padding, sizeof(padding), 0) < 0) {
+			perror("ERROR reading from socket");
+			break;
+		}
+		if (padding[0] != '\0') {
+			printf("Error: reply msg should end with '\\0'\n");
+			break;
+		}
+		
+		strncpy(reply_msg, buffer, msg_len);
+		content_len = (uint8_t)strlen(reply_msg);
+		
+		// Send string length
+		if(send(newsockfd, (char *)(&content_len), 1, 0) < 0) {
+			perror("Error sending content length");
+			break;
+		}
+		
+		// Send string
+		if(send(newsockfd, reply_msg, (ssize_t)content_len, 0) < 0) {
+			perror("ERROR writing to socket");
+			break;
+		}
+
+		// send padding zero
+		if(send(newsockfd, "\0", 1, 0) < 0) {
+			perror("ERROR writing to socket");
+			break;
+		}
+
+	}
+	close(newsockfd);
+	pthread_exit(NULL);
 }
 
 int main(int argc, char *argv[])
 {
 	int rc;
 	long t;
-	int sockfd, portno;
+	int sockfd, portno, option=1;
 	socklen_t clilen;
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	if (sockfd < 0) 
-		puts("ERROR opening socket");
-     bzero((char *) &serv_addr, sizeof(serv_addr));
+	setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (char *)(&option), sizeof(option));
+	if (sockfd < 0) {
+		perror("ERROR opening socket");
+		return 1;
+	}
+	bzero((char *) &serv_addr, sizeof(serv_addr));
 	portno = 8080;
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
 	serv_addr.sin_port = htons(portno);
-	if (bind(sockfd, (struct sockaddr *) &serv_addr,
-				sizeof(serv_addr)) < 0) 
-		puts("ERROR on binding");
+	if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+		perror("ERROR on binding");
+		return 1;
+	}
 	listen(sockfd, NUM_CLIENTS);
 	while(true)
 	{
@@ -66,11 +113,12 @@ int main(int argc, char *argv[])
 		long newsockfd = accept(sockfd, 
 				(struct sockaddr *) &cli_addr, 
 				&clilen);
-		if (newsockfd < 0) 
-			puts("ERROR on accept");
+		if (newsockfd < 0) {
+			perror("ERROR on accept");
+		}
 		pthread_t threads;
 		rc = pthread_create(&threads, NULL, rw_socket, (void *)newsockfd);
-		if (rc){
+		if (rc) {
 			printf("ERROR; return code from pthread_create() is %d\n", rc);
 			exit(-1);
 		}
@@ -78,4 +126,5 @@ int main(int argc, char *argv[])
 	close(sockfd);
 	/* Last thing that main() should do */
 	pthread_exit(NULL);
+	return 0;
 }
