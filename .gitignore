@@ -2,8 +2,9 @@
 stringClient
 stringServer
 test*
-client
-server
+*lient
+*erver
+*.swp
 
 # Object files
 *.o
