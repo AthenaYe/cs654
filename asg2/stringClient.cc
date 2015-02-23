@@ -31,7 +31,7 @@ void *ReadString(void *threadid)
 	while(true)
 	{
 		string st;
-		cin>>st;
+		getline(cin, st);
 		buff.push_back(st);
 	}
 	pthread_exit(NULL);
@@ -51,7 +51,7 @@ void *SendString(void *threadid)
 			continue;
 		string st = buff.front();
 		buff.erase(buff.begin());
-		cout<<"puts"<<st<<endl;
+//		cout<<"puts"<<st<<endl;
 		bzero(buffer, sizeof(buffer));
 		strcpy(buffer, st.c_str());
 		content_len = (uint8_t)strlen(buffer);
@@ -93,9 +93,9 @@ void *SendString(void *threadid)
 			return NULL;
 		}
 		if (padding[0] != '\0') {
-			printf("Error: reply msg should end with '\\0'\n");
+			perror("Error: reply msg should end with '\\0'\n");
 		}
-		printf("[%s]\n", buffer);
+		printf("Server: %s\n", buffer);
 		sleep(5);
 	}
 	pthread_exit(NULL);

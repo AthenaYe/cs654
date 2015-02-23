@@ -13,10 +13,15 @@
 #include <sys/types.h> 
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <string>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/select.h>
 #include <set>
+#include <sstream>
+#include <iostream>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #define NUM_CLIENTS 2
 
@@ -28,6 +33,19 @@ fd_set rfds;
 set<int> rfds_set;
 int max_fd;
 
+string StringProcess(char buffer[])
+{
+	stringstream ss;
+	ss << buffer;
+	string st;
+	string ret;
+	while(ss>>st)
+	{
+		st[0] = toupper(st[0]);
+		ret += st + " ";
+	}
+	return ret;
+}
 
 void rw_socket(int newsockfd)
 {
@@ -47,7 +65,7 @@ void rw_socket(int newsockfd)
 		return;
 	}
 	if (n == 0) {
-		printf("Client Disconnected\n");
+//		printf("Client Disconnected\n");
 		FD_CLR(newsockfd, &rfds);
 		rfds_set.erase(newsockfd);
 		return;
@@ -69,13 +87,14 @@ void rw_socket(int newsockfd)
 		return;
 	}
 	if (padding[0] != '\0') {
-		printf("Error: reply msg should end with '\\0'\n");
+//		printf("Error: reply msg should end with '\\0'\n");
 		FD_CLR(newsockfd, &rfds);
 		rfds_set.erase(newsockfd);
 		return;
 	}
-
-	strncpy(reply_msg, buffer, msg_len);
+	string st = StringProcess(buffer);
+//	cout<<"["<<st<<"]"<<endl;
+	strncpy(reply_msg, st.c_str(), msg_len);
 	content_len = (uint8_t)strlen(reply_msg);
 
 	// Send string length
@@ -109,7 +128,7 @@ void init_rfds(void)
 	set<int>::iterator it;
 	for(it = rfds_set.begin(); it != rfds_set.end(); it++)
 	{
-		printf("%d\n", *it);
+//		printf("%d\n", *it);
 		FD_SET(*it, &rfds);
 	}
 }
@@ -132,7 +151,7 @@ void *select_client(void *sockfd_ptr)
 			perror("select() error");
 		else if (retval)
 		{
-			printf("Data is available now.\n");
+//			printf("Data is available now.\n");
 			set<int>::iterator it;
 //			printf("set size:%d\n", rfds_set.size());
 			for(it = rfds_set.begin(); it != rfds_set.end(); it++)
@@ -144,7 +163,9 @@ void *select_client(void *sockfd_ptr)
 			}
 		}
 		else
-			printf("No data within %ld seconds.\n", timeout.tv_sec);
+		{
+		//	printf("No data within %ld seconds.\n", timeout.tv_sec);
+		}
 		FD_ZERO(&rfds);
 	}
 	pthread_exit(NULL);
@@ -154,8 +175,12 @@ int main(int argc, char *argv[])
 {
 	int rc;
 	long t;
-	int sockfd, portno, option=1;
+	int sockfd, option=1;
+	int portno[100], i;
+	for(i  = 0; i<=80; i++)
+		portno[i] = i + 8000;
 	socklen_t clilen;
+
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (char *)(&option), sizeof(option));
 	if (sockfd < 0) {
@@ -163,14 +188,19 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 	bzero((char *) &serv_addr, sizeof(serv_addr));
-	portno = 8080;
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
-	serv_addr.sin_port = htons(portno);
-	if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-		perror("ERROR on binding");
-		return 1;
+	for(i = 0; i <= 90; i++)
+	{
+		serv_addr.sin_port = htons(portno[i]);
+		if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+			perror("ERROR on binding");
+			continue;
+		}
+		else break;
 	}
+	printf("SERVER_ADDRESS %s\n", inet_ntoa(serv_addr.sin_addr));
+	printf("SERVER_PORT %d\n", ntohs(serv_addr.sin_port));
 	listen(sockfd, NUM_CLIENTS);
 	max_fd = sockfd;
 	/*
@@ -194,7 +224,7 @@ int main(int argc, char *argv[])
 			perror("ERROR on accept");
 		}
 		max_fd = max(max_fd, newsockfd);
-		printf("new sockfd:%d\n", newsockfd);
+		//		printf("new sockfd:%d\n", newsockfd);
 		rfds_set.insert(newsockfd);
 	}
 	close(sockfd);
