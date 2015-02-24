@@ -23,7 +23,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#define NUM_CLIENTS 2
+#define NUM_CLIENTS 8
 
 using namespace std;
 
@@ -176,9 +176,8 @@ int main(int argc, char *argv[])
 	int rc;
 	long t;
 	int sockfd, option=1;
-	int portno[100], i;
-	for(i  = 0; i<=80; i++)
-		portno[i] = i + 8000;
+	char hostname[256];
+
 	socklen_t clilen;
 
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -190,17 +189,20 @@ int main(int argc, char *argv[])
 	bzero((char *) &serv_addr, sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
-	for(i = 0; i <= 90; i++)
-	{
-		serv_addr.sin_port = htons(portno[i]);
-		if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-			perror("ERROR on binding");
-			continue;
-		}
-		else break;
+	serv_addr.sin_port = 0;
+	
+	socklen_t sockaddr_len = (socklen_t)sizeof(struct sockaddr);
+	if (bind(sockfd, (struct sockaddr *) &serv_addr, sockaddr_len) < 0) {
+		perror("ERROR on binding");
+		return 1;
 	}
-	printf("SERVER_ADDRESS %s\n", inet_ntoa(serv_addr.sin_addr));
+	
+	// Print Server Socket Info
+	gethostname(hostname, sizeof(hostname));
+	getsockname(sockfd, (struct sockaddr *)&serv_addr, &sockaddr_len);
+	printf("SERVER_ADDRESS %s\n", hostname);
 	printf("SERVER_PORT %d\n", ntohs(serv_addr.sin_port));
+	
 	listen(sockfd, NUM_CLIENTS);
 	max_fd = sockfd;
 	/*

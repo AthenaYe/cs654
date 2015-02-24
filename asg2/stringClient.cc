@@ -96,7 +96,7 @@ void *SendString(void *threadid)
 			perror("Error: reply msg should end with '\\0'\n");
 		}
 		printf("Server: %s\n", buffer);
-		sleep(5);
+		sleep(2);
 	}
 	pthread_exit(NULL);
 }
