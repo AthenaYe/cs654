@@ -1,11 +1,3 @@
-/******************************************************************************
- * * FILE: hello.c
- * * DESCRIPTION:
- * *   A "hello world" Pthreads program.  Demonstrates thread creation and
- * *   termination.
- * * AUTHOR: Blaise Barney
- * * LAST REVISED: 08/09/11
- * ******************************************************************************/
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,7 +15,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#define NUM_CLIENTS 8
+#define NUM_CLIENTS 5
 
 using namespace std;
 
@@ -49,7 +41,6 @@ string StringProcess(char buffer[])
 
 void rw_socket(int newsockfd)
 {
-	//	int newsockfd = (int)((long)sock_ptr);
 	char buffer[256];
 	char reply_msg[256];
 	char padding[1];
@@ -65,7 +56,7 @@ void rw_socket(int newsockfd)
 		return;
 	}
 	if (n == 0) {
-//		printf("Client Disconnected\n");
+		printf("Client Disconnected\n");
 		FD_CLR(newsockfd, &rfds);
 		rfds_set.erase(newsockfd);
 		return;
@@ -87,13 +78,12 @@ void rw_socket(int newsockfd)
 		return;
 	}
 	if (padding[0] != '\0') {
-//		printf("Error: reply msg should end with '\\0'\n");
+		printf("Error: reply msg should end with '\\0'\n");
 		FD_CLR(newsockfd, &rfds);
 		rfds_set.erase(newsockfd);
 		return;
 	}
 	string st = StringProcess(buffer);
-//	cout<<"["<<st<<"]"<<endl;
 	strncpy(reply_msg, st.c_str(), msg_len);
 	content_len = (uint8_t)strlen(reply_msg);
 
@@ -128,7 +118,6 @@ void init_rfds(void)
 	set<int>::iterator it;
 	for(it = rfds_set.begin(); it != rfds_set.end(); it++)
 	{
-//		printf("%d\n", *it);
 		FD_SET(*it, &rfds);
 	}
 }
@@ -153,7 +142,6 @@ void *select_client(void *sockfd_ptr)
 		{
 //			printf("Data is available now.\n");
 			set<int>::iterator it;
-//			printf("set size:%d\n", rfds_set.size());
 			for(it = rfds_set.begin(); it != rfds_set.end(); it++)
 			{
 				if(FD_ISSET(*it, &rfds))
@@ -226,11 +214,9 @@ int main(int argc, char *argv[])
 			perror("ERROR on accept");
 		}
 		max_fd = max(max_fd, newsockfd);
-		//		printf("new sockfd:%d\n", newsockfd);
 		rfds_set.insert(newsockfd);
 	}
 	close(sockfd);
-	/* Last thing that main() should do */
 	pthread_exit(NULL);
 	return 0;
 }

@@ -1,11 +1,3 @@
-/******************************************************************************
- * * FILE: hello.c
- * * DESCRIPTION:
- * *   A "hello world" Pthreads program.  Demonstrates thread creation and
- * *   termination.
- * * AUTHOR: Blaise Barney
- * * LAST REVISED: 08/09/11
- * ******************************************************************************/
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,7 +19,6 @@ void *ReadString(void *threadid)
 {
 	long tid;
 	tid = (long)threadid;
-//	printf("Hello World! It's me, thread #%ld!\n", tid);
 	while(true)
 	{
 		string st;
@@ -44,14 +35,12 @@ void *SendString(void *threadid)
 	char buffer[256];
 	uint8_t content_len;
 	tid = (long)threadid;
-//	printf("Hello World! It's me, thread #%ld!\n", tid);
 	while(true)
 	{
 		if(buff.empty())
 			continue;
 		string st = buff.front();
 		buff.erase(buff.begin());
-//		cout<<"puts"<<st<<endl;
 		bzero(buffer, sizeof(buffer));
 		strcpy(buffer, st.c_str());
 		content_len = (uint8_t)strlen(buffer);
@@ -107,11 +96,6 @@ int main(int argc, char *argv[])
     struct sockaddr_in serv_addr;
     struct hostent *server;
 	uint8_t content_len;
-  /*  if (argc < 3) {
-       fprintf(stderr,"usage %s hostname port\n", argv[0]);
-       exit(0);
-    }*/
-    
 	portno = atoi(getenv("SERVER_PORT"));
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) 
@@ -147,6 +131,5 @@ int main(int argc, char *argv[])
 			exit(-1);
 		}
 	}
-	/* Last thing that main() should do */
 	pthread_exit(NULL);
 }
