@@ -5,6 +5,7 @@
 #include <sys/types.h> 
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <cstring>
 #include <string>
 #include <string.h>
 #include <sys/types.h>
@@ -16,11 +17,12 @@
 #include <arpa/inet.h>
 #include <map>
 
-#define NUM_CLIENTS 5
-#define hostname string
-#define fd int
+#define NUM_CLIENTS 1
 
 using namespace std;
+
+typedef string hostname;
+typedef int fd;
 
 struct sockaddr_in serv_addr, cli_addr;
 map<hostname, fd> client_hostname_set;
