@@ -1,23 +1,19 @@
-Assignment2 for cs654 version 1.0 15/Feb./2015
+two_phase_commit 
 
 Author Information
 -------------------
-Name: Borui Ye
-Email: b7ye@uwaterloo.ca
+Name: Athena Ye
+Email: athenaye.uw@gmail.com
 Phone number: (519)-722-9166
+
+Proxy
+-----
+Phase 1: send type, recv rply
+Phase 2: send type, send length, send operation, send content
 
 Compilation
 ------------
-Run "make" to compile, you can see two executable files stringClient and stringServer.
+Run "make" to compile, you can see two executable files client and server.
 
 Usage
 ------
-1. Run "./stringServer", you can see hostname and port number like:
-SERVER_ADDRESS hostname
-SERVER_PORT port number
-2. Set environmental variables:
-In client's side, you should first set $SERVER_ADDRESS and $SERVER_PORT:
-$ export SERVER_ADDRESS="hostname"                                                                                                                                           
-$ export SERVER_PORT="port number"
-Then run "./stringClient", it can automatically retrieve the two values using the "getenv()" call.
-3. After successful connection, you can send message to server. The server can accept multiple clients.

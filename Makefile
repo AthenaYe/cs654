@@ -1,3 +1,3 @@
 all:
-	g++ -pthread stringClient.cc -o stringClient
-	g++ -pthread stringServer.cc -o stringServer
+	g++ -pthread client.cc -o client
+	g++ -pthread server.cc -o server

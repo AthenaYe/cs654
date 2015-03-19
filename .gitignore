@@ -3,10 +3,11 @@ stringClient
 stringServer
 binder
 a.out
-est*
+test*
 *lient
 *erver
 *.swp
+
 
 # Object files
 *.o
