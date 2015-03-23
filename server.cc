@@ -34,6 +34,19 @@ bool ask_vote(int newsockfd, int msg_type, char *operation)
 		system_failure = true;
 		return false;
 	}
+	int len = strlen(operation);
+	ret = send_msg(newsockfd, (char *)&len, sizeof(int));
+	if(ret == ERROR_SEND_FAIL)
+	{
+		perror("one sock pip broke down");
+		return false;
+	}
+	else if(ret == ERROR_CLIENT_CLOSE)
+	{
+		perror("client has closed");
+		system_failure = true;
+		return false;
+	}
 	ret = send_msg(newsockfd, operation, strlen(operation)); //?
 	if(ret == ERROR_SEND_FAIL)
 	{
@@ -45,7 +58,6 @@ bool ask_vote(int newsockfd, int msg_type, char *operation)
 		perror("client has closed");
 		return false;
 	}
-	else return false;
 	ret = recv(newsockfd, &reply_msg, sizeof(int), 0);
 	if(ret == -1)	// recv timeout 
 	{
@@ -59,6 +71,7 @@ bool ask_vote(int newsockfd, int msg_type, char *operation)
 		return false;
 	}
 	int response_type = *(int *) reply_msg;
+	printf("response %d\n", response_type);
 	if(response_type == RPLY_YES)
 		return true;
 	else return false;
@@ -70,19 +83,57 @@ bool loop_ask(int msg_type, char *operation)
 	for(; it != client_hostname_set.end(); it++)
 	{
 		int client_fd = it->second;
+		cout<<"ask "<<it->first<<" "<<it->second<<endl;
 		if(ask_vote(client_fd, msg_type, operation) ==false)
 			return false;
 	}
 	return true;
 }
 
-void loop_commit(char *operation)
+void loop_terminate()
 {
-	return;
+	map<hostname, fd>::iterator it = client_hostname_set.begin();
+	for(; it != client_hostname_set.end(); it++)
+	{
+		int client_fd = it->second;
+		int term = MSG_TERMINATE;
+		send(client_fd, (char *)&term, sizeof(int), 0); 
+	}
+
 }
 
-void loop_abort(char *operation)
+bool loop_commit()
 {
+	map<hostname, fd>::iterator it = client_hostname_set.begin();
+	for(; it != client_hostname_set.end(); it++)
+	{
+		if(system_failure)
+			return false;
+		int client_fd = it->second;
+		int type = MSG_COMMIT;
+		ret = send_msg(newsockfd, (char *)&type, sizeof(int));
+		if(ret == ERROR_SEND_FAIL)
+		{
+			perror("one sock pip broke down");
+			return false;
+		}
+		else if(ret == ERROR_CLIENT_CLOSE)
+		{
+			perror("client has closed");
+			system_failure = true;
+			return false;
+		}
+	}
+	return true;
+}
+
+void loop_abort()
+{
+	map<hostname, fd>::iterator it = client_hostname_set.begin();
+	for(; it != client_hostname_set.end(); it++)
+	{
+		int client_fd = it->second;
+	}
 	return;
 }
 
@@ -97,12 +148,29 @@ void two_phase_commit(char * filename)
 	// phase one: loop through the cohorts set to see if all of them is available
 	while(fgets(operation, 1000, pFile) != NULL)
 	{
+		if(system_failure)
+			break;
 		if(loop_ask(ASK_COMMIT, operation))
-			loop_commit(operation);
-		else if(!system_failure)
-			loop_abort(operation);
-		else break;
+		{
+			puts("ask success, begin commit");
+			if(!loop_commit())
+			{
+				puts("commit failed, begin roll back");
+				loop_rollback();
+			}
+			else 
+			{
+				puts("commit suc,");
+				loop_complete();
+			}
+		}
+		else
+		{
+			puts("ask failed, begin abort");
+			loop_abort();
+		}
 	}
+	loop_terminate();
 	return;
 }
 
@@ -123,12 +191,12 @@ int main(int argc, char *argv[])
 	struct timeval timeout; 
 	timeout.tv_sec = 10;
 	timeout.tv_usec = 0;
-//	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
-//				sizeof(timeout)) < 0)
-//	{
-//		perror("setsockopt failed\n");
-//		return 1;
-//	}
+	//	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
+	//				sizeof(timeout)) < 0)
+	//	{
+	//		perror("setsockopt failed\n");
+	//		return 1;
+	//	}
 	if (sockfd < 0) {
 		perror("ERROR opening socket");
 		return 1;
