@@ -105,13 +105,14 @@ void loop_terminate()
 bool loop_commit()
 {
 	map<hostname, fd>::iterator it = client_hostname_set.begin();
+	int type = MSG_COMMIT;
 	for(; it != client_hostname_set.end(); it++)
 	{
 		if(system_failure)
 			return false;
 		int client_fd = it->second;
 		int type = MSG_COMMIT;
-		ret = send_msg(newsockfd, (char *)&type, sizeof(int));
+		int ret = send_msg(client_fd, (char *)&type, sizeof(int));
 		if(ret == ERROR_SEND_FAIL)
 		{
 			perror("one sock pip broke down");
@@ -127,12 +128,14 @@ bool loop_commit()
 	return true;
 }
 
-void loop_abort()
+void loop(int msg_type)
 {
 	map<hostname, fd>::iterator it = client_hostname_set.begin();
+	int type = msg_type;
 	for(; it != client_hostname_set.end(); it++)
 	{
 		int client_fd = it->second;
+		send_msg(client_fd, (char *)&type, sizeof(int));
 	}
 	return;
 }
@@ -156,18 +159,18 @@ void two_phase_commit(char * filename)
 			if(!loop_commit())
 			{
 				puts("commit failed, begin roll back");
-				loop_rollback();
+				loop(MSG_ROLLBACK);
 			}
 			else 
 			{
 				puts("commit suc,");
-				loop_complete();
+				loop(MSG_COMPLETE); 
 			}
 		}
 		else
 		{
 			puts("ask failed, begin abort");
-			loop_abort();
+			loop(MSG_ABORT);
 		}
 	}
 	loop_terminate();

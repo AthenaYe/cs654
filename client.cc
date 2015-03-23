@@ -56,6 +56,11 @@ void answer_commit(int sockfd)
 void terminate(int sockfd)
 {
 	puts("server ask me to terminate");
+	for(int i = 0; i < 20; i++)
+	{
+		printf("index %d\n", i);
+		cout<<"["<<database[i].st<<"]"<<endl;
+	}
 	exit(EXIT_SUCCESS);
 	return;
 }
@@ -69,7 +74,7 @@ void real_commit(int sockfd)
 		reply = COMMIT_FAIL;
 	else if(redo_log.index == -1)
 		reply == COMMIT_FAIL;
-	send(sockfd, (char *)reply, sizeof(int), 0);
+	send(sockfd, (char *)&reply, sizeof(int), 0);
 	if(reply == COMMIT_FAIL)
 		return;
 	database[index].st = redo_log.st; 
