@@ -16,6 +16,21 @@ string char_to_st(char *st)
 	return s;
 }
 
+void print_res(void)
+{
+	vector<float>::iterator it = commit_success.begin();
+	for(; it != commit_success.end(); it++)
+	{
+		printf("%f\n", *it);
+	}
+	map<int, float>::iterator itt = timestamp_count.begin();
+	for(; itt != timestamp_count.end(); itt++)
+	{
+		printf("%f %f\n", itt->first, itt->second);
+	}
+	return;
+}
+
 bool ask_vote(int newsockfd, int msg_type, char *operation)
 {
 	char buffer[256];
@@ -149,10 +164,15 @@ void two_phase_commit(char * filename)
 	memset(operation, 0, sizeof(operation));
 	pFile = fopen (filename, "r");
 	// phase one: loop through the cohorts set to see if all of them is available
+	start = clock();	//	start timer
+	int item_count = 0;
+	int item_suc = 0;
 	while(fgets(operation, 1000, pFile) != NULL)
 	{
 		if(system_failure)
 			break;
+		int if_suc = false;
+		clock_t item_begin = clock();
 		if(loop_ask(ASK_COMMIT, operation))
 		{
 			puts("ask success, begin commit");
@@ -163,6 +183,7 @@ void two_phase_commit(char * filename)
 			}
 			else 
 			{
+				if_suc = true;
 				puts("commit suc,");
 				loop(MSG_COMPLETE); 
 			}
@@ -171,6 +192,19 @@ void two_phase_commit(char * filename)
 		{
 			puts("ask failed, begin abort");
 			loop(MSG_ABORT);
+		}
+		clock_t item_end = clock();
+		item_count++;
+		if(item_count % 10 == 0)
+		{
+			now = clock();
+			float time_elapse = (now - start) / (double) CLOCKS_PER_SEC;
+			timestamp_count[item_suc] = time_elapse;
+		}
+		if(if_suc)
+		{
+			float time_elapse = (item_end - item_begin) / (double) CLOCKS_PER_SEC;
+			commit_success.push_back(time_elapse);
 		}
 	}
 	loop_terminate();
@@ -192,14 +226,14 @@ int main(int argc, char *argv[])
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (char *)(&option), sizeof(option));
 	struct timeval timeout; 
-	timeout.tv_sec = 10;
+	timeout.tv_sec = TIMEOUT;
 	timeout.tv_usec = 0;
-	//	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
-	//				sizeof(timeout)) < 0)
-	//	{
-	//		perror("setsockopt failed\n");
-	//		return 1;
-	//	}
+	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
+				sizeof(timeout)) < 0)
+	{
+		perror("setsockopt failed\n");
+		return 1;
+	}
 	if (sockfd < 0) {
 		perror("ERROR opening socket");
 		return 1;
@@ -243,5 +277,6 @@ int main(int argc, char *argv[])
 			break;
 	}
 	two_phase_commit(argv[1]);
+	print_res();
 	return 0;
 }
