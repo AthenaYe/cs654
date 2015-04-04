@@ -34,7 +34,7 @@ void answer_commit(int sockfd)
 		perror("failed to recv server data");
 		return;
 	}
-	printf("%d recv:[%s]", prob, msg);
+	printf("recv:[%s]\n", prob, msg);
 	int reply = RPLY_YES;
 	if(prob <= PROB)
 		reply = RPLY_NO;
