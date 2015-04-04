@@ -86,7 +86,7 @@ bool ask_vote(int newsockfd, int msg_type, char *operation)
 		return false;
 	}
 	int response_type = *(int *) reply_msg;
-	printf("response %d\n", response_type);
+//	printf("response %d\n", response_type);
 	if(response_type == RPLY_YES)
 		return true;
 	else return false;
@@ -98,7 +98,7 @@ bool loop_ask(int msg_type, char *operation)
 	for(; it != client_hostname_set.end(); it++)
 	{
 		int client_fd = it->second;
-		cout<<"ask "<<it->first<<" "<<it->second<<endl;
+//		cout<<"ask "<<it->first<<" "<<it->second<<endl;
 		if(ask_vote(client_fd, msg_type, operation) ==false)
 			return false;
 	}
@@ -113,6 +113,7 @@ void loop_terminate()
 		int client_fd = it->second;
 		int term = MSG_TERMINATE;
 		send(client_fd, (char *)&term, sizeof(int), 0); 
+		close(client_fd);
 	}
 
 }
@@ -176,7 +177,7 @@ void two_phase_commit(char * filename)
 		clock_t item_begin = clock();
 		if(loop_ask(ASK_COMMIT, operation))
 		{
-			puts("ask success, begin commit");
+//			puts("ask success, begin commit");
 			if(!loop_commit())
 			{
 				puts("commit failed, begin roll back");
@@ -185,7 +186,7 @@ void two_phase_commit(char * filename)
 			else 
 			{
 				if_suc = true;
-				puts("commit suc,");
+		//		puts("commit suc,");
 				loop(MSG_COMPLETE); 
 			}
 		}
@@ -212,7 +213,8 @@ void two_phase_commit(char * filename)
 	}
 	loop_terminate();
 	clock_t end = clock();
-	printf("latency: %f throughput: %f\n", time_count/ 10000, 10000/ ((end - start) / (double)CLOCKS_PER_SEC));
+	printf("sucess:%d all:%d\n", item_suc, item_count);
+	printf("time used:%f latency: %f throughput: %f\n", (end-start) / (double)CLOCKS_PER_SEC, time_count/ item_suc, 10000/ ((end - start) / (double)CLOCKS_PER_SEC));
 	return;
 }
 
@@ -282,6 +284,6 @@ int main(int argc, char *argv[])
 			break;
 	}
 	two_phase_commit(argv[1]);
-	print_res();
+//	print_res();
 	return 0;
 }

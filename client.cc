@@ -138,7 +138,6 @@ void handle_requests(int sockfd)
 								break;
 			default:	break;
 		}
-		puts("SSS");
 		if(ifterminate)
 		{
 			close(sockfd);
@@ -150,7 +149,6 @@ void handle_requests(int sockfd)
 
 int main(int argc, char *argv[])
 {
-	signal(SIGPIPE, SIG_IGN);
 	for(int i = 0; i < 20; i++)
 	{
 		database[i].st = "";
