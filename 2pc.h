@@ -8,4 +8,4 @@
 #define RPLY_NO -1	//	cohort unavaileble to commit, phase one 
 #define	COMMIT_SUCCESS	0	// cohort successfully commit, phase two
 #define COMMIT_FAIL	-1	// cohort failed to commit, phase two
-#define TIMEOUT 500	// in 0.5 second
+#define TIMEOUT 0.5	// in 0.5 second

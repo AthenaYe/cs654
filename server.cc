@@ -5,7 +5,19 @@
 
 using namespace std;
 
+
 bool system_failure = false;
+
+double get_wall_time()
+{
+    struct timeval time;
+    if (gettimeofday(&time,NULL))
+	{
+        //  Handle error
+        return 0;
+    }
+    return (double)time.tv_sec + (double)time.tv_usec * .000001;
+}
 
 string char_to_st(char *st)
 {
@@ -165,7 +177,7 @@ void two_phase_commit(char * filename)
 	memset(operation, 0, sizeof(operation));
 	pFile = fopen (filename, "r");
 	// phase one: loop through the cohorts set to see if all of them is available
-	start = clock();	//	start timer
+	double start = get_wall_time();	//	start timer
 	int item_count = 0;
 	int item_suc = 0;
 	float time_count = 0.0;
@@ -174,7 +186,7 @@ void two_phase_commit(char * filename)
 		if(system_failure)
 			break;
 		int if_suc = false;
-		clock_t item_begin = clock();
+		double item_begin = get_wall_time();
 		if(loop_ask(ASK_COMMIT, operation))
 		{
 //			puts("ask success, begin commit");
@@ -195,26 +207,26 @@ void two_phase_commit(char * filename)
 			puts("ask failed, begin abort");
 			loop(MSG_ABORT);
 		}
-		clock_t item_end = clock();
+		double item_end = get_wall_time();
 		item_count++;
 		if(if_suc)
 		{
-			float time_elapse = (item_end - item_begin) / (double) CLOCKS_PER_SEC;
+			float time_elapse = item_end - item_begin;
 			time_count += time_elapse;
 			commit_success.push_back(time_elapse);
 			item_suc++;
 		}
 		if(item_count % 10 == 0)
 		{
-			now = clock();
-			float time_elapse = (now - start) / (double) CLOCKS_PER_SEC;
+			double now = get_wall_time();
+			float time_elapse = now - start;
 			timestamp_count[item_suc] = time_elapse;
 		}
 	}
 	loop_terminate();
-	clock_t end = clock();
+	double end = get_wall_time();
 	printf("sucess:%d all:%d\n", item_suc, item_count);
-	printf("time used:%f latency: %f throughput: %f\n", (end-start) / (double)CLOCKS_PER_SEC, time_count/ item_suc, 10000/ ((end - start) / (double)CLOCKS_PER_SEC));
+	printf("time used:%f latency: %f throughput: %f\n", end-start, time_count / item_suc, 10000 / (end - start));
 	return;
 }
 
@@ -235,12 +247,12 @@ int main(int argc, char *argv[])
 	struct timeval timeout; 
 	timeout.tv_sec = TIMEOUT;
 	timeout.tv_usec = 0;
-	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
-				sizeof(timeout)) < 0)
-	{
-		perror("setsockopt failed\n");
-		return 1;
-	}
+//	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
+//				sizeof(timeout)) < 0)
+//	{
+//		perror("setsockopt failed\n");
+//		return 1;
+//	}
 	if (sockfd < 0) {
 		perror("ERROR opening socket");
 		return 1;

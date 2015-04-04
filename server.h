@@ -18,6 +18,7 @@
 #include <map>
 #include <ctime>
 #include <vector>
+#include <sys/time.h>
 
 #define NUM_CLIENTS 1
 
@@ -29,8 +30,5 @@ typedef int fd;
 struct sockaddr_in serv_addr, cli_addr;
 map<hostname, fd> client_hostname_set;
 map<fd, hostname> client_fd_set;
-clock_t start;
-clock_t end;
-clock_t now;
 vector<float> commit_success;
 map<int, float> timestamp_count;
