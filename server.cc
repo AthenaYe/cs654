@@ -26,7 +26,7 @@ void print_res(void)
 	map<int, float>::iterator itt = timestamp_count.begin();
 	for(; itt != timestamp_count.end(); itt++)
 	{
-		printf("%f %f\n", itt->first, itt->second);
+		printf("%d %f\n", itt->first, itt->second);
 	}
 	return;
 }
@@ -167,6 +167,7 @@ void two_phase_commit(char * filename)
 	start = clock();	//	start timer
 	int item_count = 0;
 	int item_suc = 0;
+	float time_count = 0.0;
 	while(fgets(operation, 1000, pFile) != NULL)
 	{
 		if(system_failure)
@@ -195,19 +196,23 @@ void two_phase_commit(char * filename)
 		}
 		clock_t item_end = clock();
 		item_count++;
+		if(if_suc)
+		{
+			float time_elapse = (item_end - item_begin) / (double) CLOCKS_PER_SEC;
+			time_count += time_elapse;
+			commit_success.push_back(time_elapse);
+			item_suc++;
+		}
 		if(item_count % 10 == 0)
 		{
 			now = clock();
 			float time_elapse = (now - start) / (double) CLOCKS_PER_SEC;
 			timestamp_count[item_suc] = time_elapse;
 		}
-		if(if_suc)
-		{
-			float time_elapse = (item_end - item_begin) / (double) CLOCKS_PER_SEC;
-			commit_success.push_back(time_elapse);
-		}
 	}
 	loop_terminate();
+	clock_t end = clock();
+	printf("latency: %f throughput: %f\n", time_count/ 10000, 10000/ ((end - start) / (double)CLOCKS_PER_SEC));
 	return;
 }
 

@@ -3,6 +3,7 @@
 #include "2pc.h" 
 #include "client.h"
 #include <signal.h>
+#define PROB -1
 
 using namespace std;
 
@@ -35,7 +36,7 @@ void answer_commit(int sockfd)
 	}
 	printf("%d recv:[%s]", prob, msg);
 	int reply = RPLY_YES;
-	if(prob <= 10)
+	if(prob <= PROB)
 		reply = RPLY_NO;
 	send(sockfd, (char *)&reply, sizeof(int), 0);
 	stringstream ss; 
@@ -70,7 +71,7 @@ void real_commit(int sockfd)
 	int index = redo_log.index;
 	int prob  = rand() % 100;
 	int reply = COMMIT_SUCCESS;
-	if(prob <= 10)
+	if(prob <= PROB)
 		reply = COMMIT_FAIL;
 	else if(redo_log.index == -1)
 		reply == COMMIT_FAIL;
