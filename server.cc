@@ -245,8 +245,8 @@ int main(int argc, char *argv[])
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (char *)(&option), sizeof(option));
 	struct timeval timeout; 
-	timeout.tv_sec = TIMEOUT;
-	timeout.tv_usec = 0;
+//	timeout.tv_sec = TIMEOUT;
+//	timeout.tv_usec = 0;
 //	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
 //				sizeof(timeout)) < 0)
 //	{

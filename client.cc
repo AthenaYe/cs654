@@ -36,6 +36,8 @@ void answer_commit(int sockfd)
 	}
 	printf("recv:[%s]\n", msg);
 	int reply = RPLY_YES;
+	if(strlen(msg)==0)
+		reply = RPLY_NO;
 	if(prob <= PROB)
 		reply = RPLY_NO;
 	send(sockfd, (char *)&reply, sizeof(int), 0);
