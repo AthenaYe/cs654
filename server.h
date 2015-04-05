@@ -20,7 +20,7 @@
 #include <vector>
 #include <sys/time.h>
 
-#define NUM_CLIENTS 2
+#define NUM_CLIENTS 1
 
 using namespace std;
 

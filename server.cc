@@ -8,15 +8,11 @@ using namespace std;
 
 bool system_failure = false;
 
-double get_wall_time()
+timespec get_wall_time()
 {
-    struct timeval time;
-    if (gettimeofday(&time,NULL))
-	{
-        //  Handle error
-        return 0;
-    }
-    return (double)time.tv_sec + (double)time.tv_usec * .000001;
+    struct timespec today_time;
+	clock_gettime(CLOCK_REALTIME, &today_time);
+	return today_time;
 }
 
 string char_to_st(char *st)
@@ -177,16 +173,18 @@ void two_phase_commit(char * filename)
 	memset(operation, 0, sizeof(operation));
 	pFile = fopen (filename, "r");
 	// phase one: loop through the cohorts set to see if all of them is available
-	double start = get_wall_time();	//	start timer
+	timespec start = get_wall_time();	//	start timer
 	int item_count = 0;
 	int item_suc = 0;
-	float time_count = 0.0;
+	timespec time_count;
+	time_count.tv_sec = 0;
+	time_count.tv_nsec = 0;
 	while(fgets(operation, 1000, pFile) != NULL)
 	{
 		if(system_failure)
 			break;
 		int if_suc = false;
-		double item_begin = get_wall_time();
+		timespec item_begin = get_wall_time();
 		if(loop_ask(ASK_COMMIT, operation))
 		{
 //			puts("ask success, begin commit");
@@ -207,26 +205,32 @@ void two_phase_commit(char * filename)
 			puts("ask failed, begin abort");
 			loop(MSG_ABORT);
 		}
-		double item_end = get_wall_time();
+		timespec item_end = get_wall_time();
 		item_count++;
+		timespec time_elapse;
 		if(if_suc)
 		{
-			float time_elapse = item_end - item_begin;
-			time_count += time_elapse;
-			commit_success.push_back(time_elapse);
+			time_elapse.tv_sec = item_end.tv_sec - item_begin.tv_sec;
+			time_elapse.tv_nsec = item_end.tv_nsec - item_begin.tv_nsec;
+			time_count.tv_sec += time_elapse.tv_sec;
+			time_count.tv_nsec += time_elapse.tv_nsec;
+//			commit_success.push_back(time_elapse);
 			item_suc++;
 		}
 		if(item_count % 10 == 0)
 		{
-			double now = get_wall_time();
-			float time_elapse = now - start;
-			timestamp_count[item_suc] = time_elapse;
+			timespec now = get_wall_time();
+			time_elapse.tv_sec = item_end.tv_sec - item_begin.tv_sec;
+			time_elapse.tv_nsec = item_end.tv_nsec - item_begin.tv_nsec;
+//			timestamp_count[item_suc] = time_elapse;
 		}
 	}
 	loop_terminate();
-	double end = get_wall_time();
+	timespec end = get_wall_time();
 	printf("sucess:%d all:%d\n", item_suc, item_count);
-	printf("time used:%f latency: %f throughput: %f\n", end-start, time_count / item_suc, 10000 / (end - start));
+	long long time_used = (end.tv_sec - start.tv_sec) * 1000000000 + end.tv_nsec - start.tv_nsec;
+	long long time_count_ll = time_count.tv_sec * 1000000000 + time_count.tv_nsec;
+	printf("time used:%lfms latency: %lfms throughput: %f item per ms\n", time_used / 1000000.0, (time_count_ll / 1000000.0) / item_suc, 10000 / (time_used / 1000000.0));
 	return;
 }
 
@@ -260,7 +264,7 @@ int main(int argc, char *argv[])
 	bzero((char *) &serv_addr, sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
-	serv_addr.sin_port = 0;
+	serv_addr.sin_port = 4001;
 
 	socklen_t sockaddr_len = (socklen_t)sizeof(struct sockaddr);
 	if (bind(sockfd, (struct sockaddr *) &serv_addr, sockaddr_len) < 0) {
