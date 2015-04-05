@@ -244,7 +244,7 @@ void two_phase_commit(char * filename)
 	printf("sucess:%d all:%d\n", item_suc, item_count);
 	long long time_used = (end.tv_sec - start.tv_sec) * 1000000000 + end.tv_nsec - start.tv_nsec;
 	long long time_count_ll = time_count.tv_sec * 1000000000 + time_count.tv_nsec;
-	printf("time used:%lfms latency: %lfms throughput: %f item per ms\n", time_used / 1000000.0, (time_count_ll / 1000000.0) / item_suc, 10000 / (time_used / 1000000.0));
+	printf("time used:%lfms latency: %lfms throughput: %f item per ms\n", time_used / 1000000.0, (time_count_ll / 1000000.0) / item_suc, item_suc / (time_used / 1000000.0));
 	return;
 }
 
