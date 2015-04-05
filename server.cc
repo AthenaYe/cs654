@@ -148,6 +148,20 @@ bool loop_commit()
 			system_failure = true;
 			return false;
 		}
+		ret = recv(client_fd, (char *)&type, sizeof(int), 0);
+		if(ret == -1)	// recv timeout 
+		{
+			perror("recv timeout");
+			return false;
+		}
+		else if(ret == 0)
+		{
+			perror("client disconnected");
+			system_failure = true;
+			return false;
+		}
+		if(type == RPLY_NO)
+			return false;
 	}
 	return true;
 }
@@ -187,7 +201,7 @@ void two_phase_commit(char * filename)
 		timespec item_begin = get_wall_time();
 		if(loop_ask(ASK_COMMIT, operation))
 		{
-//			puts("ask success, begin commit");
+			//			puts("ask success, begin commit");
 			if(!loop_commit())
 			{
 				puts("commit failed, begin roll back");
@@ -196,7 +210,7 @@ void two_phase_commit(char * filename)
 			else 
 			{
 				if_suc = true;
-		//		puts("commit suc,");
+				//		puts("commit suc,");
 				loop(MSG_COMPLETE); 
 			}
 		}
@@ -214,16 +228,16 @@ void two_phase_commit(char * filename)
 			time_elapse.tv_nsec = item_end.tv_nsec - item_begin.tv_nsec;
 			time_count.tv_sec += time_elapse.tv_sec;
 			time_count.tv_nsec += time_elapse.tv_nsec;
-//			commit_success.push_back(time_elapse);
+			//			commit_success.push_back(time_elapse);
 			item_suc++;
 		}
-		if(item_count % 10 == 0)
-		{
-			timespec now = get_wall_time();
-			time_elapse.tv_sec = item_end.tv_sec - item_begin.tv_sec;
-			time_elapse.tv_nsec = item_end.tv_nsec - item_begin.tv_nsec;
-//			timestamp_count[item_suc] = time_elapse;
-		}
+		//		if(item_count % 10 == 0)
+		//		{
+		//			timespec now = get_wall_time();
+		//			time_elapse.tv_sec = item_end.tv_sec - item_begin.tv_sec;
+		//			time_elapse.tv_nsec = item_end.tv_nsec - item_begin.tv_nsec;
+		//			timestamp_count[item_suc] = time_elapse;
+		//		}
 	}
 	loop_terminate();
 	timespec end = get_wall_time();
@@ -249,14 +263,14 @@ int main(int argc, char *argv[])
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (char *)(&option), sizeof(option));
 	struct timeval timeout; 
-//	timeout.tv_sec = TIMEOUT;
-//	timeout.tv_usec = 0;
-//	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
-//				sizeof(timeout)) < 0)
-//	{
-//		perror("setsockopt failed\n");
-//		return 1;
-//	}
+	//	timeout.tv_sec = TIMEOUT;
+	//	timeout.tv_usec = 0;
+	//	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
+	//				sizeof(timeout)) < 0)
+	//	{
+	//		perror("setsockopt failed\n");
+	//		return 1;
+	//	}
 	if (sockfd < 0) {
 		perror("ERROR opening socket");
 		return 1;
@@ -264,7 +278,7 @@ int main(int argc, char *argv[])
 	bzero((char *) &serv_addr, sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
-	serv_addr.sin_port = 4001;
+	serv_addr.sin_port = htons(4001);
 
 	socklen_t sockaddr_len = (socklen_t)sizeof(struct sockaddr);
 	if (bind(sockfd, (struct sockaddr *) &serv_addr, sockaddr_len) < 0) {
@@ -300,6 +314,6 @@ int main(int argc, char *argv[])
 			break;
 	}
 	two_phase_commit(argv[1]);
-//	print_res();
+	//	print_res();
 	return 0;
 }
